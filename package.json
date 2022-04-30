@@ -1,0 +1,20 @@
+{
+  "name": "sveltekit-frontend-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A starter monorepo separating SvelteKit front-end and backend code, in TypeScript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jtlapp/sveltekit-frontend-backend.git"
+  },
+  "author": "Joseph T. Lapp",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jtlapp/sveltekit-frontend-backend/issues"
+  },
+  "homepage": "https://github.com/jtlapp/sveltekit-frontend-backend#readme"
+}
