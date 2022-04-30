@@ -1,16 +1,24 @@
 import * as fs from "fs";
 import { parse as parseCSV } from "@fast-csv/parse";
 
-export async function loadFipsByZip(
-  filepath: string
-): Promise<Record<number, number>> {
-  const fipsByZip: Record<number, number> = {};
+export interface County {
+  fips: number;
+  state: string;
+}
 
-  return new Promise<Record<number, number>>((resolve, reject) => {
+export async function loadCountyByZip(
+  filepath: string
+): Promise<Record<number, County>> {
+  const fipsByZip: Record<number, County> = {};
+
+  return new Promise<Record<number, County>>((resolve, reject) => {
     fs.createReadStream(filepath)
       .pipe(parseCSV({ headers: true }))
       .on("data", (row) => {
-        fipsByZip[parseInt(row["ZIP"])] = parseInt(row["STCOUNTYFP"]);
+        fipsByZip[parseInt(row["ZIP"])] = {
+          fips: parseInt(row["STCOUNTYFP"]),
+          state: row["STATE"],
+        };
       })
       .on("end", () => resolve(fipsByZip))
       .on("error", (err) => {

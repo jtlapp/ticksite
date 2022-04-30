@@ -2,7 +2,7 @@ import * as path from "path";
 
 import { LifeStage } from "./lib/tick_occurrence";
 import { loadOccurrences } from "./lib/tick_occurrence";
-import { loadFipsByZip, loadDivsByFips } from "./lib/zips_fips_divs";
+import { loadCountyByZip, loadDivsByFips } from "./lib/zips_fips_divs";
 
 const zipsFipsFile = path.join(
   __dirname,
@@ -23,6 +23,7 @@ export interface DivisionSummary {
   lifeStage: LifeStage;
   year: number;
   climateDivision: number;
+  state: string;
   // indexed first by month (0-11) and then by quarter of month (0-3)
   counts: number[][];
 }
@@ -37,7 +38,7 @@ let unrecognizedZipCodes: number[] = [];
 let unrecognizedFips: number[] = [];
 
 async function generateData() {
-  const fipsByZip = await loadFipsByZip(zipsFipsFile);
+  const countyByZip = await loadCountyByZip(zipsFipsFile);
   const divsByFips = await loadDivsByFips(fipsDivsFile);
   const occurrences = await loadOccurrences(occurrenceFile);
 
@@ -60,15 +61,15 @@ async function generateData() {
       lifeStageData[occurrence.year] = yearData;
     }
 
-    const fips = fipsByZip[occurrence.zipCode];
-    if (!fips) {
+    const county = countyByZip[occurrence.zipCode];
+    if (!county) {
       unrecognizedZipCodes.push(occurrence.zipCode);
       continue;
     }
 
-    const climateDivision = divsByFips[fips];
+    const climateDivision = divsByFips[county.fips];
     if (!climateDivision) {
-      unrecognizedFips.push(fips);
+      unrecognizedFips.push(county.fips);
       continue;
     }
 
@@ -82,7 +83,8 @@ async function generateData() {
         source: occurrence.source,
         lifeStage: occurrence.lifeStage,
         year: occurrence.year,
-        climateDivision: climateDivision,
+        climateDivision,
+        state: county.state,
         // indexed first by month (0-11) and then by quarter of month (0-3)
         counts,
       };
@@ -111,7 +113,9 @@ function printData() {
           const counts = summary.counts
             .map((month) => month.join(","))
             .join(",");
-          console.log(`${source},${lifeStage},${year},${division},${counts}`);
+          console.log(
+            `${source},${lifeStage},${year},${division},${summary.state},${counts}`
+          );
         }
       }
     }
