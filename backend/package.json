@@ -1,11 +1,11 @@
 {
-  "name": "@sveltekit-frontend-backend/backend",
+  "name": "@ticksite/backend",
   "version": "0.1.0",
+  "license": "MIT",
   "description": "Backend code subject to unit testing",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC"
+  "author": ""
 }

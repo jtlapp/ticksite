@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { SITE_NAME } from 'shared/constants';
+	//import { SITE_NAME } from '../../../shared/constants';
+	import { SITE_NAME } from '@ticksite/shared/constants';
 </script>
 
 <h1>Welcome to {SITE_NAME}</h1>

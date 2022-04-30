@@ -1,9 +1,14 @@
 {
-  "name": "sveltekit-frontend-backend",
+  "name": "ticksite",
   "version": "0.1.0",
   "private": true,
   "description": "A starter monorepo separating SvelteKit front-end and backend code, in TypeScript",
   "main": "index.js",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared" 
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
