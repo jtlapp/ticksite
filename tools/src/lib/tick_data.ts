@@ -35,13 +35,34 @@ export abstract class TickData {
     return value == "" ? null : value;
   }
 
-  protected _toEncounterDate(date: Date, feedingHours: number): Date {
+  protected _toEncounterDate(
+    source: string,
+    tickID: string,
+    date: Date,
+    feedingHours: number
+  ): Date {
+    let year = date.getUTCFullYear();
+    if (year < 2000 || year > 2022) throw Error("invalid year");
     const iso = date.toISOString();
     const isoT0 = iso.substring(0, iso.indexOf("T")) + "T00:00:00.000Z";
     const date0 = new Date(isoT0);
     const middayMillis = date0.getTime() + HOUR_TICK_FOUND * MILLIS_PER_HOUR;
-    return new Date(
+    const encounterDate = new Date(
       middayMillis - feedingHours * MILLIS_PER_HOUR - MINS_UNTIL_FEEDING
     );
+    year = encounterDate.getUTCFullYear();
+    if (year < 2000 || year > 2022) {
+      console.log(
+        "Bad encounterDate:",
+        encounterDate,
+        "for",
+        source,
+        tickID,
+        date,
+        feedingHours
+      );
+      process.exit(1);
+    }
+    return encounterDate;
   }
 }

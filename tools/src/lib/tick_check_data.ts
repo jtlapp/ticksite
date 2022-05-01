@@ -1,6 +1,7 @@
 import { LifeStage } from "./tick_occurrence";
 import { MILLIS_PER_HOUR, TickData, DeerTick } from "./tick_data";
 
+const SOURCE = "TickCheck";
 const MAX_ORDER_FOUND_DATE_DIFF_DAYS = 4;
 
 interface IncompleteRecord {
@@ -100,6 +101,8 @@ export class TickCheckData extends TickData {
         engorgementHours = lifeStageHours[record.engorgementLabel];
       }
       const encounterDate = this._toEncounterDate(
+        SOURCE,
+        record.tickID,
         estimatedFoundDate,
         engorgementHours
       );
@@ -252,6 +255,8 @@ export class TickCheckData extends TickData {
     let encounterDate: Date;
     try {
       encounterDate = this._toEncounterDate(
+        SOURCE,
+        tickID,
         new Date(rawFoundDate),
         engorgementHours
       );
@@ -263,7 +268,7 @@ export class TickCheckData extends TickData {
 
     return {
       tickID: tickID,
-      source: "TickCheck",
+      source: SOURCE,
       species: species,
       lifeStage,
       year: encounterDate.getUTCFullYear(),

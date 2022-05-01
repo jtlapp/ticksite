@@ -53,8 +53,6 @@
 				latestYear = summary.year;
 			}
 		}
-		earliestYear = 2010;
-		latestYear = 2021;
 		for (let i = earliestYear; i <= latestYear; ++i) {
 			startYears.push(i);
 			endYears.push(i);

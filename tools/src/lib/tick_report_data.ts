@@ -1,6 +1,8 @@
 import { LifeStage } from "./tick_occurrence";
 import { DeerTick, TickData } from "./tick_data";
 
+const SOURCE = "TickReport";
+
 export class TickReportData extends TickData {
   filepath: string;
   avgFeedingHours: Record<string, Record<string, number>>;
@@ -55,6 +57,8 @@ export class TickReportData extends TickData {
     let encounterDate: Date;
     try {
       encounterDate = this._toEncounterDate(
+        SOURCE,
+        tickID,
         new Date(rawRemovedDate),
         feedingHours
       );
@@ -64,7 +68,7 @@ export class TickReportData extends TickData {
 
     return {
       tickID,
-      source: "TickReport",
+      source: SOURCE,
       species,
       lifeStage: lifeStage,
       year: encounterDate.getUTCFullYear(),
