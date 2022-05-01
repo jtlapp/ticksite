@@ -1,5 +1,3 @@
-import { parse as parseCSV } from '@fast-csv/parse';
-
 export class ClimDivSummary {
 	source: string;
 	lifeStage: string;
@@ -30,20 +28,17 @@ export class ClimDivSummary {
 	}
 
 	static async load(): Promise<ClimDivSummary[]> {
+		console.log('fetching...');
 		const res = await fetch('data/climdiv-summaries.csv');
+		console.log(JSON.stringify(res));
 		const csvFile = await res.text();
 		const summaries: ClimDivSummary[] = [];
 
-		return new Promise<ClimDivSummary[]>((resolve, reject) => {
-			const stream = parseCSV({ headers: false })
-				.on('data', (row) => summaries.push(new ClimDivSummary(row)))
-				.on('end', () => resolve(summaries))
-				.on('error', (err) => {
-					console.log('csv streaming error:', err);
-					reject(err);
-				});
-			stream.write(csvFile);
-			stream.end();
-		});
+		const lines = csvFile.split('\n');
+		for (const line of lines) {
+			const row = line.split(',');
+			summaries.push(new ClimDivSummary(row));
+		}
+		return summaries;
 	}
 }
