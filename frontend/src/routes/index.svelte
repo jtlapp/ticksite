@@ -1,25 +1,100 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Line from 'svelte-chartjs/src/Line.svelte';
 
 	import { SITE_NAME } from '@ticksite/shared/constants';
 	import DropDown from '../components/DropDown.svelte';
 	import { ClimDivSummary } from '../lib/ClimDivSummary';
+	import { ChartSource } from '../lib/ChartSource';
+
+	const months = [
+		'Jan',
+		'Feb',
+		'Mar',
+		'Apr',
+		'May',
+		'Jun',
+		'Jul',
+		'Aug',
+		'Sep',
+		'Oct',
+		'Nov',
+		'Dec'
+	];
+
+	let earliestYear = 4000;
+	let latestYear = 0;
+	let startYears: number[] = [];
+	let endYears: number[] = [];
 
 	let chartCount = 10;
 	let plotType = 'Divisions';
 	let source = 'any';
-	let startYear = 2017;
-	let endYear = 2019;
+	let startYear = 0;
+	let endYear = 0;
 	let lifeStage = 'any';
 	let pointsPerMonth = 1;
 
 	let summaries: ClimDivSummary[];
+	let chartSources: ChartSource[] = [];
+	let xAxisLabels: string[] = [];
 
 	onMount(async () => {
-		console.log('loading');
 		summaries = await ClimDivSummary.load();
-		console.log('loaded');
+		for (const summary of summaries) {
+			if (summary.year < earliestYear) {
+				earliestYear = summary.year;
+			} else if (summary.year > latestYear) {
+				latestYear = summary.year;
+			}
+		}
+		earliestYear = 2010;
+		latestYear = 2021;
+		for (let i = earliestYear; i <= latestYear; ++i) {
+			startYears.push(i);
+			endYears.push(i);
+		}
+		startYear = startYears[0];
+		endYear = endYears[endYears.length - 1];
 	});
+
+	$: {
+		endYears = [];
+		for (let i = startYear; i <= latestYear; ++i) {
+			endYears.push(i);
+		}
+		if (endYear < endYears[0]) {
+			endYear = endYears[0];
+		}
+	}
+
+	$: if (summaries) {
+		const chartsByRegion: Record<string | number, ChartSource> = {};
+		for (const summary of summaries) {
+			if (
+				(source == 'any' || source == summary.source) &&
+				startYear <= summary.year &&
+				endYear >= summary.year &&
+				(lifeStage == 'any' || lifeStage.toLowerCase() == summary.lifeStage)
+			) {
+				const region = plotType == 'States' ? summary.state : summary.climateDivision;
+				let chart = chartsByRegion[region];
+				if (!chart) {
+					chart = new ChartSource(summary.climateDivision, summary.state);
+					chartsByRegion[region] = chart;
+				}
+				chart.add(summary, pointsPerMonth);
+			}
+		}
+		chartSources = Object.values(chartsByRegion);
+		chartSources.sort((a, b) => b.total - a.total);
+		chartSources = chartSources.slice(0, chartCount);
+
+		xAxisLabels = [];
+		for (let i = 0; i < chartSources[0].counts.length; ++i) {
+			xAxisLabels.push(months[Math.floor(i / pointsPerMonth)]);
+		}
+	}
 </script>
 
 {#if summaries}
@@ -37,10 +112,10 @@
 				<DropDown label="Source" bind:value={source} options={['any', 'TickCheck', 'TickReport']} />
 			</div>
 			<div class="sm:w-28 px-3 mb-6">
-				<DropDown label="Start" bind:value={startYear} options={[2017, 2018, 2019]} />
+				<DropDown label="Start" bind:value={startYear} options={startYears} />
 			</div>
 			<div class="sm:w-28 px-3 mb-6">
-				<DropDown label="End" bind:value={endYear} options={[2017, 2018, 2019]} />
+				<DropDown label="End" bind:value={endYear} options={endYears} />
 			</div>
 			<div class="sm:w-30 px-3 mb-6">
 				<DropDown
@@ -53,6 +128,27 @@
 				<DropDown label="Points/Month" bind:value={pointsPerMonth} options={[1, 2, 4]} />
 			</div>
 		</div>
+
+		{#each chartSources as source}
+			<div class="mx-auto sm:w-2/3 md:w-1/2 mb-4">
+				<Line
+					data={{
+						labels: xAxisLabels,
+						datasets: [
+							{
+								label:
+									(plotType == 'Divisions' ? source.climateDivision + ', ' : '') +
+									source.state +
+									` (${source.total} ticks)`,
+								data: source.counts,
+								borderColor: 'rgb(75, 192, 192)',
+								lineTension: 0.5
+							}
+						]
+					}}
+				/>
+			</div>
+		{/each}
 	</div>
 {:else}
 	No summaries

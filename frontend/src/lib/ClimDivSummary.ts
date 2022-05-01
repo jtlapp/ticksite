@@ -17,16 +17,6 @@ export class ClimDivSummary {
 		}
 	}
 
-	add(another: ClimDivSummary): void {
-		for (let i = 0; i < this.counts.length; ++i) {
-			this.counts[i] += another.counts[i];
-		}
-	}
-
-	clone(): ClimDivSummary {
-		return Object.assign({}, this);
-	}
-
 	static async load(): Promise<ClimDivSummary[]> {
 		const res = await fetch('data/climdiv-summaries.csv');
 		const csvFile = await res.text();
@@ -37,7 +27,6 @@ export class ClimDivSummary {
 			const row = line.split(',');
 			summaries.push(new ClimDivSummary(row));
 		}
-		console.log('len', summaries.length);
 		return summaries;
 	}
 }
