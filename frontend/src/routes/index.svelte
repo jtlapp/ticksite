@@ -38,6 +38,7 @@
 	let endYear = initialParams?.endYear || 4000;
 	let lifeStage = initialParams?.lifeStage || 'any';
 	let pointsPerMonth = initialParams?.pointsPerMonth || 1;
+	let chartWidth = initialParams?.chartWidth || 300;
 
 	let summaries: ClimDivSummary[];
 	let chartSources: ChartSource[] = [];
@@ -109,7 +110,8 @@
 			startYear,
 			endYear,
 			lifeStage,
-			pointsPerMonth
+			pointsPerMonth,
+			chartWidth
 		})
 	);
 </script>
@@ -144,28 +146,38 @@
 			<div class="sm:w-32 px-3 mb-6">
 				<DropDown label="Points/Month" bind:value={pointsPerMonth} options={[1, 2, 4]} />
 			</div>
-		</div>
-
-		{#each chartSources as source}
-			<div class="mx-auto sm:w-2/3 md:w-1/2 mb-4">
-				<Line
-					data={{
-						labels: xAxisLabels,
-						datasets: [
-							{
-								label:
-									(plotType == 'Divisions' ? source.climateDivision + ', ' : '') +
-									source.state +
-									` (${source.total} ticks)`,
-								data: source.counts,
-								borderColor: 'rgb(75, 192, 192)',
-								lineTension: 0.5
-							}
-						]
-					}}
+			<div class="sm:w-26 px-3 mb-6">
+				<DropDown
+					label="Width"
+					bind:value={chartWidth}
+					options={[200, 250, 300, 350, 400, 450, 500, 550, 600]}
 				/>
 			</div>
-		{/each}
+		</div>
+
+		<div class="flex flex-wrap justify-center">
+			{#each chartSources as source}
+				<div class="mb-4">
+					<Line
+						width={chartWidth}
+						data={{
+							labels: xAxisLabels,
+							datasets: [
+								{
+									label:
+										(plotType == 'Divisions' ? source.climateDivision + ', ' : '') +
+										source.state +
+										` (${source.total} ticks)`,
+									data: source.counts,
+									borderColor: 'rgb(75, 192, 192)',
+									lineTension: 0.5
+								}
+							]
+						}}
+					/>
+				</div>
+			{/each}
+		</div>
 	</div>
 {:else}
 	No summaries
