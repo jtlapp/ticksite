@@ -28,9 +28,7 @@ export class ClimDivSummary {
 	}
 
 	static async load(): Promise<ClimDivSummary[]> {
-		console.log('fetching...');
 		const res = await fetch('data/climdiv-summaries.csv');
-		console.log(JSON.stringify(res));
 		const csvFile = await res.text();
 		const summaries: ClimDivSummary[] = [];
 
@@ -39,6 +37,7 @@ export class ClimDivSummary {
 			const row = line.split(',');
 			summaries.push(new ClimDivSummary(row));
 		}
+		console.log('len', summaries.length);
 		return summaries;
 	}
 }

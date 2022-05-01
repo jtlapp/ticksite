@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
 	import { SITE_NAME } from '@ticksite/shared/constants';
 	import DropDown from '../components/DropDown.svelte';
 	import { ClimDivSummary } from '../lib/ClimDivSummary';
@@ -12,14 +14,16 @@
 	let pointsPerMonth = 1;
 
 	let summaries: ClimDivSummary[];
-	async function prepare() {
+
+	onMount(async () => {
+		console.log('loading');
 		summaries = await ClimDivSummary.load();
-	}
+		console.log('loaded');
+	});
 </script>
 
-{#await prepare()}
+{#if summaries}
 	<h1 class="font-medium mt-4 mb-6 text-2xl text-center">Welcome to {SITE_NAME}</h1>
-	<div>{summaries.length} summaries</div>
 
 	<div class="mx-auto">
 		<div class="flex flex-wrap justify-center mb-2 mx-auto">
@@ -50,4 +54,6 @@
 			</div>
 		</div>
 	</div>
-{/await}
+{:else}
+	No summaries
+{/if}
