@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import Line from 'svelte-chartjs/src/Line.svelte';
 
-	import { SITE_NAME } from '@ticksite/shared/constants';
 	import DropDown from '../components/DropDown.svelte';
 	import { ClimDivSummary } from '../lib/ClimDivSummary';
 	import { ChartSource } from '../lib/ChartSource';
@@ -39,10 +38,12 @@
 	let endYear: number = initialParams?.endYear || 4000;
 	let lifeStage: string = initialParams?.lifeStage || 'any';
 	let pointsPerMonth: number = initialParams?.pointsPerMonth || 1;
-	let minPoints: number = initialParams?.minPoints || 100;
+	let minCount: number = initialParams?.minCount || 100;
 	let chartWidth: number = initialParams?.chartWidth || 300;
 
 	let summaries: ClimDivSummary[];
+	let monthPoints = 0;
+	let yearPoints = 0;
 	let chartSources: ChartSource[] = [];
 	let xAxisLabels: string[] = [];
 
@@ -74,7 +75,25 @@
 	}
 
 	$: if (summaries) {
+		// Index summaries by division and then year.
+
+		const summaryIndex: Record<number, Record<number, ClimDivSummary>> = {};
+		for (const summary of summaries) {
+			let summaryEntry = summaryIndex[summary.climateDivision];
+			if (!summaryEntry) {
+				summaryEntry = {};
+				summaryIndex[summary.climateDivision] = summaryEntry;
+			}
+			summaryEntry[summary.year] = summary;
+		}
+
+		// Tabulate the number of data points and the charts.
+
+		// whether there is a data point for any given division, year, and month
+		const pointsByDivAndYear: Record<number, Record<number, boolean[]>> = {};
+		monthPoints = 0;
 		const chartsByRegion: Record<string | number, ChartSource> = {};
+
 		for (const summary of summaries) {
 			if (
 				(source == 'any' || source == summary.source) &&
@@ -82,6 +101,42 @@
 				endYear >= summary.year &&
 				(lifeStage == 'any' || lifeStage.toLowerCase() == summary.lifeStage)
 			) {
+				// Identify available data points.
+
+				for (let i = 0; i < 12; ++i) {
+					let precedingYearCounts = 0;
+					for (let j = i - 1; j >= 0; --j) {
+						for (let k = 0; k < 4; ++k) {
+							precedingYearCounts += summary.counts[j * 4 + k];
+						}
+					}
+					const precedingSummary = summaryIndex[summary.climateDivision][summary.year - 1];
+					if (precedingSummary) {
+						for (let j = 11; j >= i; --j) {
+							for (let k = 0; k < 4; ++k) {
+								precedingYearCounts += precedingSummary.counts[j * 4 + k];
+							}
+						}
+					} else {
+						// must have all months of prior year to count as a data point
+						precedingYearCounts = 0;
+					}
+					let pointsByYear = pointsByDivAndYear[summary.climateDivision];
+					if (!pointsByYear) {
+						pointsByYear = {};
+						pointsByDivAndYear[summary.climateDivision] = pointsByYear;
+					}
+					let pointsByMonth = pointsByYear[summary.year];
+					if (!pointsByMonth) {
+						pointsByMonth = new Array(12).fill(false);
+						pointsByYear[summary.year] = pointsByMonth;
+					}
+					pointsByMonth[i] = precedingYearCounts >= minCount;
+					if (pointsByMonth[i]) ++monthPoints;
+				}
+
+				// Accumulate data into a chart.
+
 				const region = plotType == 'States' ? summary.state : summary.climateDivision;
 				let chart = chartsByRegion[region];
 				if (!chart) {
@@ -91,10 +146,23 @@
 				chart.add(summary, pointsPerMonth);
 			}
 		}
+		//console.log(JSON.stringify(pointsByDivAndYear, undefined, '  '));
+
+		// Calculate total complete years represented in month points.
+
+		yearPoints = 0;
+		for (const pointsByYear of Object.values(pointsByDivAndYear)) {
+			for (const pointsByMonth of Object.values(pointsByYear)) {
+				if (pointsByMonth.every((available) => available)) ++yearPoints;
+			}
+		}
+
+		// Filter and sort the charts.
+
 		chartSources = Object.values(chartsByRegion);
 		chartSources.sort((a, b) => b.total - a.total);
 		chartSources = chartSources.slice(0, chartCount);
-		chartSources = chartSources.filter((src) => src.total >= minPoints);
+		chartSources = chartSources.filter((src) => src.total >= minCount);
 		if (plotType == 'States') {
 			const reorderedSources: ChartSource[] = [];
 			for (const state of stateAbbrsCoolestFirst) {
@@ -106,6 +174,8 @@
 			}
 			chartSources = reorderedSources;
 		}
+
+		// Label the charts.
 
 		xAxisLabels = [];
 		for (let i = 0; i < chartSources[0].counts.length; ++i) {
@@ -123,14 +193,14 @@
 			endYear,
 			lifeStage,
 			pointsPerMonth,
-			minPoints,
+			minCount,
 			chartWidth
 		})
 	);
 </script>
 
 {#if summaries}
-	<h1 class="font-medium mt-4 mb-6 text-2xl text-center">Welcome to {SITE_NAME}</h1>
+	<h1 class="font-medium mt-4 mb-6 text-2xl text-center">Seasonal Deer Tick Abundance</h1>
 
 	<div class="mx-auto">
 		<div class="flex flex-wrap justify-center mb-2 mx-auto">
@@ -161,9 +231,9 @@
 			</div>
 			<div class="sm:w-26 px-3 mb-6">
 				<DropDown
-					label="Min Points"
-					bind:value={minPoints}
-					options={[80, 100, 120, 150, 175, 200, 250, 300, 350, 400, 450, 500]}
+					label="Min Count"
+					bind:value={minCount}
+					options={[50, 60, 70, 80, 90, 100, 120, 150, 175, 200, 250, 300, 350, 400, 450, 500]}
 				/>
 			</div>
 			<div class="sm:w-26 px-3 mb-6">
@@ -173,6 +243,10 @@
 					options={[200, 250, 300, 350, 400, 450, 500, 550, 600]}
 				/>
 			</div>
+		</div>
+
+		<div class="mb-4 text-center">
+			{monthPoints} per-month points available for {yearPoints} complete years
 		</div>
 
 		<div class="flex flex-wrap justify-center">
