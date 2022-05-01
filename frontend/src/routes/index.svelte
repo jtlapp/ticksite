@@ -7,6 +7,7 @@
 	import { ClimDivSummary } from '../lib/ClimDivSummary';
 	import { ChartSource } from '../lib/ChartSource';
 
+	const STORAGE_KEY = 'params';
 	const months = [
 		'Jan',
 		'Feb',
@@ -22,18 +23,21 @@
 		'Dec'
 	];
 
+	const initialParamsJson = sessionStorage.getItem('params');
+	const initialParams = initialParamsJson ? JSON.parse(initialParamsJson) : null;
+
 	let earliestYear = 4000;
 	let latestYear = 0;
 	let startYears: number[] = [];
 	let endYears: number[] = [];
 
-	let chartCount = 10;
-	let plotType = 'Divisions';
-	let source = 'any';
-	let startYear = 0;
-	let endYear = 0;
-	let lifeStage = 'any';
-	let pointsPerMonth = 1;
+	let chartCount = initialParams?.chartCount || 10;
+	let plotType = initialParams?.plotType || 'Divisions';
+	let source = initialParams?.source || 'any';
+	let startYear = initialParams?.startYear || 0;
+	let endYear = initialParams?.endYear || 4000;
+	let lifeStage = initialParams?.lifeStage || 'any';
+	let pointsPerMonth = initialParams?.pointsPerMonth || 1;
 
 	let summaries: ClimDivSummary[];
 	let chartSources: ChartSource[] = [];
@@ -54,8 +58,8 @@
 			startYears.push(i);
 			endYears.push(i);
 		}
-		startYear = startYears[0];
-		endYear = endYears[endYears.length - 1];
+		if (startYear < startYears[0]) startYear = startYears[0];
+		if (endYear > endYears[endYears.length - 1]) endYear = endYears[endYears.length - 1];
 	});
 
 	$: {
@@ -95,6 +99,19 @@
 			xAxisLabels.push(months[Math.floor(i / pointsPerMonth)]);
 		}
 	}
+
+	$: sessionStorage.setItem(
+		STORAGE_KEY,
+		JSON.stringify({
+			chartCount,
+			plotType,
+			source,
+			startYear,
+			endYear,
+			lifeStage,
+			pointsPerMonth
+		})
+	);
 </script>
 
 {#if summaries}
