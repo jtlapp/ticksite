@@ -6,6 +6,7 @@
 	import DropDown from '../components/DropDown.svelte';
 	import { ClimDivSummary } from '../lib/ClimDivSummary';
 	import { ChartSource } from '../lib/ChartSource';
+	import { stateAbbrsCoolestFirst } from '../lib/states';
 
 	const STORAGE_KEY = 'params';
 	const months = [
@@ -31,14 +32,15 @@
 	let startYears: number[] = [];
 	let endYears: number[] = [];
 
-	let chartCount = initialParams?.chartCount || 10;
-	let plotType = initialParams?.plotType || 'Divisions';
-	let source = initialParams?.source || 'any';
-	let startYear = initialParams?.startYear || 0;
-	let endYear = initialParams?.endYear || 4000;
-	let lifeStage = initialParams?.lifeStage || 'any';
-	let pointsPerMonth = initialParams?.pointsPerMonth || 1;
-	let chartWidth = initialParams?.chartWidth || 300;
+	let chartCount: number = initialParams?.chartCount || 10;
+	let plotType: string = initialParams?.plotType || 'Divisions';
+	let source: string = initialParams?.source || 'any';
+	let startYear: number = initialParams?.startYear || 0;
+	let endYear: number = initialParams?.endYear || 4000;
+	let lifeStage: string = initialParams?.lifeStage || 'any';
+	let pointsPerMonth: number = initialParams?.pointsPerMonth || 1;
+	let minPoints: number = initialParams?.minPoints || 100;
+	let chartWidth: number = initialParams?.chartWidth || 300;
 
 	let summaries: ClimDivSummary[];
 	let chartSources: ChartSource[] = [];
@@ -92,6 +94,18 @@
 		chartSources = Object.values(chartsByRegion);
 		chartSources.sort((a, b) => b.total - a.total);
 		chartSources = chartSources.slice(0, chartCount);
+		chartSources = chartSources.filter((src) => src.total >= minPoints);
+		if (plotType == 'States') {
+			const reorderedSources: ChartSource[] = [];
+			for (const state of stateAbbrsCoolestFirst) {
+				for (const source of chartSources) {
+					if (state == source.state) {
+						reorderedSources.push(source);
+					}
+				}
+			}
+			chartSources = reorderedSources;
+		}
 
 		xAxisLabels = [];
 		for (let i = 0; i < chartSources[0].counts.length; ++i) {
@@ -109,6 +123,7 @@
 			endYear,
 			lifeStage,
 			pointsPerMonth,
+			minPoints,
 			chartWidth
 		})
 	);
@@ -120,7 +135,7 @@
 	<div class="mx-auto">
 		<div class="flex flex-wrap justify-center mb-2 mx-auto">
 			<div class="sm:w-24 px-3 mb-6">
-				<DropDown label="Charts" bind:value={chartCount} options={[10, 20, 30, 40, 50]} />
+				<DropDown label="Charts" bind:value={chartCount} options={[10, 12, 20, 30, 40, 50]} />
 			</div>
 			<div class="sm:w-35 px-3 mb-6">
 				<DropDown label="Plot" bind:value={plotType} options={['Divisions', 'States']} />
@@ -143,6 +158,13 @@
 			</div>
 			<div class="sm:w-32 px-3 mb-6">
 				<DropDown label="Points/Month" bind:value={pointsPerMonth} options={[1, 2, 4]} />
+			</div>
+			<div class="sm:w-26 px-3 mb-6">
+				<DropDown
+					label="Min Points"
+					bind:value={minPoints}
+					options={[80, 100, 120, 150, 175, 200, 250, 300, 350, 400, 450, 500]}
+				/>
 			</div>
 			<div class="sm:w-26 px-3 mb-6">
 				<DropDown
